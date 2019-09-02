@@ -56,7 +56,7 @@ class HeadLessChrome:
         # 강좌조회 및 수강신청 클릭
         self._click_xpath_element('// *[ @ id = "SELF_STUDSELF_SUB_30"] / table / tbody / tr[1] / td')
         # 수강내용조회/출력 클릭
-        self._click_xpath_element('// *[ @ id = "SELF_STUDSELF_SUB_30SELF_MENU_10"] / table / tbody / tr[5]')
+        self._click_xpath_element('// *[ @ id = "SELF_STUDSELF_SUB_30SELF_MENU_10"] / table / tbody / tr[4]')
 
         # 수강내용조회/출력 컨텐츠 frame 으로 switch
         # https://stackoverflow.com/questions/17856187/how-to-navigate-back-to-current-page-from-frame-in-selenium-webdriver
@@ -65,6 +65,19 @@ class HeadLessChrome:
         self._switch_frame_to(None, is_parent=True)
         # 수강신청내역 frame 으로 이동
         self._logic_go_to_riaframe()
+        # 수강신청 페이지 Next 버튼 클릭
+        self._click_xpath_element('//*[@id="btnNext"]')
+
+        # 교과목명 검색 -> 검색어 입력
+        set_search = input("검색 설정 완료(Y) : ")
+        # 검색 버튼 클릭
+        # 일단 수동으로 하자
+        # if set_search == 'Y':
+        #     self._click_xpath_element('//*[@id="btnDivSearch"]')
+
+    def _logic_sugang_cycle(self):
+
+        main_window = self.driver.window_handles[0]
 
     def _logic_cycle_01(self):
         """
@@ -118,8 +131,8 @@ class HeadLessChrome:
         # 수강내용조회/출력 으로 이동
         self._logic_move_to_sugang()
 
-        self._logic_cycle_01()
-        self._logic_cycle_01()
-        self._logic_cycle_01()
+        # self._logic_cycle_01()
+        # self._logic_cycle_01()
+        # self._logic_cycle_01()
 
         return True
