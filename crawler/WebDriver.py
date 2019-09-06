@@ -1,6 +1,11 @@
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from time import sleep
+from PIL import Image
+import requests
+from io import BytesIO
+import cv2
+import pytesseract
 import config
 
 
@@ -15,6 +20,10 @@ class HeadLessChrome:
         # options.add_argument('headless')
         self.driver = webdriver.Chrome(self.driver_path, chrome_options=options)
         self.driver.implicitly_wait(1)
+
+        self.targets = ['//*[@id="rptMain"]/tbody/tr[2]/td/div/div[1]/table/tbody/tr[2]',
+                        '//*[@id="rptMain"]/tbody/tr[2]/td/div/div[1]/table/tbody/tr[3]',
+                        '//*[@id="rptMain"]/tbody/tr[2]/td/div/div[1]/table/tbody/tr[4]']
 
     # core
 
@@ -79,6 +88,61 @@ class HeadLessChrome:
 
         main_window = self.driver.window_handles[0]
 
+        btns = ['//*[@id="rptMain"]/tbody/tr[2]/td/div/div[1]/table/tbody/tr[2]/td[4]',
+                '//*[@id="rptMain"]/tbody/tr[2]/td/div/div[1]/table/tbody/tr[3]/td[4]',
+                '//*[@id="rptMain"]/tbody/tr[2]/td/div/div[1]/table/tbody/tr[4]/td[4]']
+
+        # btns = ['//*[@id="rptMain"]/tbody/tr[2]/td/div/div[1]/table/tbody/tr[2]/td[4]']
+
+        for btn in btns:
+
+            try:
+                self._logic_go_to_riaframe()
+            except:
+                self._switch_frame_to(None, is_parent=True)
+                self._logic_go_to_riaframe()
+                print("parent")
+
+            self._click_xpath_element(btn)
+            new_window = self.driver.window_handles[1]
+            # print(self.driver.page_source)
+            self.driver.switch_to.window(new_window)
+
+            self._switch_frame_to('//*[@id="htmlViewer"]')
+
+            capcha = self.driver.find_element_by_xpath('/html/body/img')
+            # self.driver.save_screenshot('test.jpg')
+            capcha.screenshot('sticky.png')
+
+            img = Image.open('sticky.png')
+            new_size = tuple(3 * x for x in img.size)
+            img = img.resize(new_size, Image.ANTIALIAS)
+
+            threshold = 60
+            th_img = img.point(lambda p: p > threshold and 255)
+
+            result = pytesseract.image_to_string(th_img,
+                                                 config='--psm 10 outputbase digits -c tessedit_char_whitelist=0123456789')
+            print(result)
+
+            # 입력창은 한 층 위 프래임에 있음
+            self._switch_frame_to(None, is_parent=True)
+            # 코드입력
+            self._send_keys_xpath_element('//*[@id="ipb1_text"]', result)
+            # 버튼 클릭
+            self._click_xpath_element('//*[@id="btnSave"]')
+
+            self.driver.switch_to.window(main_window)
+
+            self.driver.switch_to.alert.accept()
+            self.driver.switch_to.window(main_window)
+
+
+            try:
+                self.driver.switch_to.alert.accept()
+            except:
+                print("EEE")
+
     def _logic_cycle_01(self):
         """
         수강내역에 의견등록을 수행하는 사이클
@@ -131,8 +195,7 @@ class HeadLessChrome:
         # 수강내용조회/출력 으로 이동
         self._logic_move_to_sugang()
 
-        # self._logic_cycle_01()
-        # self._logic_cycle_01()
-        # self._logic_cycle_01()
+        self._logic_sugang_cycle()
+
 
         return True
